@@ -1,6 +1,7 @@
 import React from "react";
 import { Menu, CloudCheck, CloudOff, Moon, Sun, GraduationCap, ShieldCheck, LogOut } from "lucide-react";
 import { Pengaturan } from "../types";
+import { PWAInstallButton } from "./PWAInstallButton";
 
 interface HeaderProps {
   activeTab: string;
@@ -89,8 +90,12 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
 
         <div className="flex items-center space-x-2 sm:space-x-2.5 min-w-0 shrink-0">
-          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-amber-400 rounded-xl flex items-center justify-center text-slate-950 font-bold shrink-0 shadow-xs">
-            <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5 text-slate-950" />
+          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-amber-400 rounded-xl flex items-center justify-center text-slate-950 font-bold shrink-0 shadow-xs overflow-hidden">
+            {config.logoAplikasi ? (
+              <img src={config.logoAplikasi} alt="Logo Aplikasi" className="w-full h-full object-contain p-0.5" />
+            ) : (
+              <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5 text-slate-950" />
+            )}
           </div>
           <div className="flex flex-col min-w-0 leading-tight justify-center shrink-0">
             <span className="font-black text-slate-900 dark:text-white text-sm sm:text-base lg:text-lg tracking-tight block whitespace-nowrap">
@@ -106,6 +111,9 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div className="flex items-center space-x-1 sm:space-x-2 shrink-0 ml-1">
+        {/* PWA Download / Install in Chrome Button */}
+        <PWAInstallButton variant="header" />
+
         {/* Firebase Live Status Badge */}
         <div
           className={`hidden min-[480px]:flex items-center space-x-1 sm:space-x-1.5 px-2 sm:px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-bold shadow-xs transition-colors shrink-0 ${

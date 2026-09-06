@@ -95,6 +95,9 @@ export interface Pengaturan {
   Tempat_Tanda_Tangan: string;
   Logo_Kiri: string;
   Logo_Kanan: string;
+  logoAplikasi?: string;
+  iconAplikasi?: string;
+  faviconAplikasi?: string;
   username?: string;
   password?: string;
   isDatabaseCleared?: boolean;

@@ -77,7 +77,10 @@ const DEFAULT_CONFIG: Pengaturan = {
   NIP_Kepsek: "19780514 200212 1 003",
   Tempat_Tanda_Tangan: "Kerinci",
   Logo_Kiri: "https://lh3.googleusercontent.com/d/19TVwFRIp_t7sHTMntziM9SgZVoJAkhQU",
-  Logo_Kanan: "https://lh3.googleusercontent.com/d/19TVwFRIp_t7sHTMntziM9SgZVoJAkhQU"
+  Logo_Kanan: "https://lh3.googleusercontent.com/d/19TVwFRIp_t7sHTMntziM9SgZVoJAkhQU",
+  logoAplikasi: "",
+  iconAplikasi: "/pwa-192x192.png",
+  faviconAplikasi: "/icon.svg"
 };
 
 // Sub-Menu Categories Definitions for Complete Android Navigation
@@ -214,6 +217,11 @@ export default function App() {
     unsubs.push(subscribePengaturan((cfg) => {
       if (cfg && Object.keys(cfg).length > 0) {
         setConfig((prev) => ({ ...prev, ...cfg }));
+        if (cfg.faviconAplikasi) {
+          const fav = document.getElementById("dynamic-favicon");
+          if (fav) fav.setAttribute("href", cfg.faviconAplikasi);
+          localStorage.setItem("edadmin_favicon", cfg.faviconAplikasi);
+        }
       }
     }, currentUid));
 
@@ -326,6 +334,7 @@ export default function App() {
         onLoginSuccess={() => setIsAuthenticated(true)}
         isDarkMode={isDarkMode}
         onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+        config={config}
       />
     );
   }
@@ -338,6 +347,7 @@ export default function App() {
         setActiveTab={setActiveTab}
         isOpen={sidebarOpen}
         setIsOpen={setSidebarOpen}
+        config={config}
       />
 
       {/* Main Content Workspace */}

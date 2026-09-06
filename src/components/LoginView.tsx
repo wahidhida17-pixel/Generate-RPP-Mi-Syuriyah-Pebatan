@@ -1,17 +1,21 @@
 import React, { useState } from "react";
 import { GraduationCap, ShieldCheck, AlertCircle, Sun, Moon, Sparkles, CheckCircle2, Database, Lock, ArrowRight, UserCheck } from "lucide-react";
 import { signInWithGoogle } from "../lib/firebase";
+import { Pengaturan } from "../types";
+import { PWAInstallButton } from "./PWAInstallButton";
 
 interface LoginViewProps {
   onLoginSuccess: () => void;
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
+  config?: Pengaturan;
 }
 
 export const LoginView: React.FC<LoginViewProps> = ({
   onLoginSuccess,
   isDarkMode,
   onToggleDarkMode,
+  config
 }) => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -53,11 +57,15 @@ export const LoginView: React.FC<LoginViewProps> = ({
       <div className="absolute top-[-10%] left-[-10%] w-[450px] h-[450px] bg-blue-500/10 dark:bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-amber-500/10 dark:bg-amber-600/15 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Top Bar Header (Theme Toggle + App Badge) */}
+      {/* Top Bar Header (Theme Toggle + App Badge + PWA Install) */}
       <header className="w-full max-w-5xl mx-auto flex items-center justify-between z-20 py-2">
         <div className="flex items-center space-x-2.5">
-          <div className="w-9 h-9 rounded-xl bg-amber-400 text-slate-950 font-black flex items-center justify-center shadow-md">
-            <GraduationCap className="w-5 h-5 text-slate-950" />
+          <div className="w-9 h-9 rounded-xl bg-amber-400 text-slate-950 font-black flex items-center justify-center shadow-md overflow-hidden shrink-0">
+            {config?.logoAplikasi ? (
+              <img src={config.logoAplikasi} alt="Logo" className="w-full h-full object-contain p-0.5" />
+            ) : (
+              <GraduationCap className="w-5 h-5 text-slate-950" />
+            )}
           </div>
           <div>
             <span className="text-sm font-black text-slate-900 dark:text-white tracking-tight">
@@ -69,32 +77,39 @@ export const LoginView: React.FC<LoginViewProps> = ({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onToggleDarkMode}
-          className="p-2 sm:px-3 sm:py-2 rounded-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-all shadow-xs flex items-center space-x-2 text-xs font-semibold cursor-pointer"
-          aria-label="Toggle Theme"
-        >
-          {isDarkMode ? (
-            <>
-              <Sun className="w-4 h-4 text-amber-400" />
-              <span className="hidden sm:inline">Tema Terang</span>
-            </>
-          ) : (
-            <>
-              <Moon className="w-4 h-4 text-indigo-600" />
-              <span className="hidden sm:inline">Tema Gelap</span>
-            </>
-          )}
-        </button>
+        <div className="flex items-center space-x-2">
+          <PWAInstallButton variant="header" />
+          <button
+            type="button"
+            onClick={onToggleDarkMode}
+            className="p-2 sm:px-3 sm:py-2 rounded-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-all shadow-xs flex items-center space-x-2 text-xs font-semibold cursor-pointer"
+            aria-label="Toggle Theme"
+          >
+            {isDarkMode ? (
+              <>
+                <Sun className="w-4 h-4 text-amber-400" />
+                <span className="hidden sm:inline">Tema Terang</span>
+              </>
+            ) : (
+              <>
+                <Moon className="w-4 h-4 text-indigo-600" />
+                <span className="hidden sm:inline">Tema Gelap</span>
+              </>
+            )}
+          </button>
+        </div>
       </header>
 
       {/* Main Login Card Container */}
       <main className="w-full max-w-md mx-auto z-10 my-auto py-6 space-y-6">
         {/* Brand Title */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-400 text-slate-950 font-black shadow-lg shadow-amber-400/25 transform hover:scale-105 transition-transform">
-            <GraduationCap className="w-9 h-9 text-slate-950" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-400 text-slate-950 font-black shadow-lg shadow-amber-400/25 transform hover:scale-105 transition-transform overflow-hidden">
+            {config?.logoAplikasi ? (
+              <img src={config.logoAplikasi} alt="Logo" className="w-full h-full object-contain p-1" />
+            ) : (
+              <GraduationCap className="w-9 h-9 text-slate-950" />
+            )}
           </div>
 
           <div>

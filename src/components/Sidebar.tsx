@@ -22,19 +22,23 @@ import {
   FileQuestion,
   Compass
 } from "lucide-react";
+import { Pengaturan } from "../types";
+import { PWAInstallButton } from "./PWAInstallButton";
 
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
+  config?: Pengaturan;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   setActiveTab,
   isOpen,
-  setIsOpen
+  setIsOpen,
+  config
 }) => {
   const navItems = [
     {
@@ -98,8 +102,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Logo Header */}
         <div className="h-16 flex items-center justify-between px-5 border-b border-slate-800 shrink-0">
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 bg-amber-400 rounded-xl flex items-center justify-center text-slate-950 font-black shadow-lg">
-              <GraduationCap className="w-5 h-5 text-slate-950" />
+            <div className="w-9 h-9 bg-amber-400 rounded-xl flex items-center justify-center text-slate-950 font-black shadow-lg overflow-hidden shrink-0">
+              {config?.logoAplikasi ? (
+                <img src={config.logoAplikasi} alt="Logo" className="w-full h-full object-contain p-0.5" />
+              ) : (
+                <GraduationCap className="w-5 h-5 text-slate-950" />
+              )}
             </div>
             <div>
               <span className="font-extrabold text-lg tracking-tight text-white block leading-none">
@@ -161,6 +169,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               })}
             </div>
           ))}
+        </div>
+
+        {/* PWA Download Button in Sidebar */}
+        <div className="px-3 pb-2">
+          <PWAInstallButton variant="sidebar" />
         </div>
 
         {/* Footer info & Creator Credit */}
