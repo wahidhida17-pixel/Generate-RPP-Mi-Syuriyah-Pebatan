@@ -1,5 +1,23 @@
 import React, { useState } from "react";
-import { GraduationCap, ShieldCheck, AlertCircle, Sun, Moon, Sparkles, CheckCircle2, Database, Lock, ArrowRight, UserCheck } from "lucide-react";
+import { 
+  GraduationCap, 
+  ShieldCheck, 
+  AlertCircle, 
+  Sun, 
+  Moon, 
+  Sparkles, 
+  CheckCircle2, 
+  Database, 
+  Lock, 
+  ArrowRight, 
+  UserCheck,
+  Copy,
+  Check,
+  ExternalLink,
+  Globe,
+  HelpCircle,
+  KeyRound
+} from "lucide-react";
 import { signInWithGoogle } from "../lib/firebase";
 import { Pengaturan } from "../types";
 import { PWAInstallButton } from "./PWAInstallButton";
@@ -19,10 +37,17 @@ export const LoginView: React.FC<LoginViewProps> = ({
 }) => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isUnauthorizedDomain, setIsUnauthorizedDomain] = useState(false);
+  const [copiedDomain, setCopiedDomain] = useState(false);
+
+  const currentHost = typeof window !== "undefined" ? window.location.hostname : "";
+  const firebaseProjectId = "civic-experience-hwjrd";
+  const firebaseConsoleUrl = `https://console.firebase.google.com/project/${firebaseProjectId}/authentication/settings`;
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     setErrorMsg(null);
+    setIsUnauthorizedDomain(false);
     try {
       const user = await signInWithGoogle();
       if (user) {
@@ -37,7 +62,10 @@ export const LoginView: React.FC<LoginViewProps> = ({
         console.error("Google Sign-In failed:", err);
       }
       
-      if (err?.code === "auth/popup-closed-by-user") {
+      if (err?.code === "auth/unauthorized-domain") {
+        setIsUnauthorizedDomain(true);
+        setErrorMsg(`Domain "${currentHost || "ini"}" belum didaftarkan di Firebase Authentication Authorized Domains.`);
+      } else if (err?.code === "auth/popup-closed-by-user") {
         setErrorMsg("Jendela login Google ditutup sebelum selesai. Silakan coba klik tombol login kembali.");
       } else if (err?.code === "auth/cancelled-popup-request") {
         setErrorMsg("Proses autentikasi Google dibatalkan.");
@@ -49,6 +77,35 @@ export const LoginView: React.FC<LoginViewProps> = ({
     } finally {
       setGoogleLoading(false);
     }
+  };
+
+  const handleCopyDomain = () => {
+    if (currentHost) {
+      navigator.clipboard.writeText(currentHost);
+      setCopiedDomain(true);
+      setTimeout(() => setCopiedDomain(false), 3000);
+    }
+  };
+
+  const handleOfflineTeacherLogin = () => {
+    const defaultUid = "guru_mandiri_" + Math.random().toString(36).substring(2, 9);
+    const token = "local_teacher_session_" + Date.now();
+    localStorage.setItem("edadmin_auth_token", token);
+    localStorage.setItem("edadmin_user_uid", defaultUid);
+    localStorage.setItem(
+      "edadmin_user",
+      JSON.stringify({
+        uid: defaultUid,
+        email: "guru@sekolah.id",
+        name: config?.Nama_Guru || "Guru Pengampu (Akses Cepat)",
+        photoURL: "",
+        provider: "local"
+      })
+    );
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("storage"));
+    }
+    onLoginSuccess();
   };
 
   return (
@@ -137,11 +194,90 @@ export const LoginView: React.FC<LoginViewProps> = ({
             </p>
           </div>
 
-          {/* Error Alert */}
-          {errorMsg && (
+          {/* Error Alert / Unauthorized Domain Guidance */}
+          {errorMsg && !isUnauthorizedDomain && (
             <div className="p-3.5 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800/70 rounded-xl flex items-start space-x-3 text-red-700 dark:text-red-300 text-xs animate-shake">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600 dark:text-red-400" />
               <span className="font-medium leading-relaxed">{errorMsg}</span>
+            </div>
+          )}
+
+          {/* Dedicated Firebase Authorized Domain Helper Card */}
+          {isUnauthorizedDomain && (
+            <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-700/80 rounded-2xl space-y-3.5 text-xs animate-shake">
+              <div className="flex items-start gap-2.5">
+                <Globe className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-bold text-slate-900 dark:text-amber-200 text-sm">
+                    Domain Belum Terdaftar di Firebase
+                  </h4>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5 leading-relaxed">
+                    Firebase Authentication menolak login karena domain web ini belum dimasukkan ke daftar <strong>Authorized Domains</strong>.
+                  </p>
+                </div>
+              </div>
+
+              {/* Current Domain Box with Copy Button */}
+              <div className="p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-amber-200 dark:border-amber-800 flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <span className="text-[10px] text-slate-400 block font-semibold uppercase">Domain Aplikasi Anda:</span>
+                  <code className="text-xs font-mono font-bold text-blue-600 dark:text-blue-400 truncate block">
+                    {currentHost || window.location.hostname}
+                  </code>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyDomain}
+                  className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-bold text-[11px] rounded-lg shadow-xs flex items-center gap-1.5 transition shrink-0 cursor-pointer"
+                  title="Salin domain ini"
+                >
+                  {copiedDomain ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-slate-950" />
+                      <span>Tersalin!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 text-slate-950" />
+                      <span>Salin Domain</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* 3 Step Instructions */}
+              <div className="space-y-1.5 text-[11px] text-slate-700 dark:text-slate-300 bg-amber-100/50 dark:bg-amber-900/20 p-3 rounded-xl border border-amber-200/60 dark:border-amber-800/50">
+                <span className="font-bold text-slate-900 dark:text-white block mb-1">
+                  Cara Mengizinkan Domain di Firebase (1 Menit):
+                </span>
+                <ol className="list-decimal list-inside space-y-1 text-[11px] leading-relaxed">
+                  <li>Klik tombol <strong>Salin Domain</strong> di atas.</li>
+                  <li>Buka link <strong>Pengaturan Firebase</strong> di bawah.</li>
+                  <li>Di tab <strong>Authorized domains</strong>, klik <strong>Add domain</strong>, tempel nama domain, lalu klik <strong>Save</strong>.</li>
+                </ol>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-2 pt-1">
+                <a
+                  href={firebaseConsoleUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2.5 px-3 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 transition"
+                >
+                  <span>Buka Pengaturan Firebase Console</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+
+                <button
+                  type="button"
+                  onClick={handleOfflineTeacherLogin}
+                  className="w-full py-2 px-3 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold text-xs rounded-xl flex items-center justify-center gap-2 transition cursor-pointer"
+                >
+                  <KeyRound className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Atau Masuk Sementara (Mode Guru Mandiri)</span>
+                </button>
+              </div>
             </div>
           )}
 
@@ -183,6 +319,18 @@ export const LoginView: React.FC<LoginViewProps> = ({
                 </>
               )}
             </button>
+
+            {/* Quick Access for Teacher Option */}
+            <div className="text-center pt-0.5">
+              <button
+                type="button"
+                onClick={handleOfflineTeacherLogin}
+                className="text-[11px] text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 underline underline-offset-2 transition inline-flex items-center gap-1 cursor-pointer font-medium"
+              >
+                <KeyRound className="w-3 h-3 text-amber-500" />
+                <span>Masuk cepat tanpa Google (Mode Guru Mandiri)</span>
+              </button>
+            </div>
 
             {/* Feature & Security Highlights */}
             <div className="p-4 bg-gradient-to-br from-blue-50/80 to-indigo-50/50 dark:from-blue-950/40 dark:to-indigo-950/20 border border-blue-200/80 dark:border-blue-900/50 rounded-2xl space-y-2.5 text-xs text-slate-700 dark:text-slate-300">
