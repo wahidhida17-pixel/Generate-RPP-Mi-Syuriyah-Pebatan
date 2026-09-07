@@ -7,9 +7,9 @@ import dotenv from "dotenv";
 dotenv.config();
 
 let firebaseConfigData: Record<string, any> = {
-  projectId: "civic-experience-hwjrd",
-  apiKey: "",
-  firestoreDatabaseId: "ai-studio-remixaplikasigur-56062c0e-eed9-4671-9c69-29cccf21d0d1"
+  projectId: "generate-rpp-mi-syuriyah",
+  apiKey: "AIzaSyDpOfFaiWM8JKy0ou1dGTldbtmD9Q1eERs",
+  firestoreDatabaseId: "(default)"
 };
 
 try {

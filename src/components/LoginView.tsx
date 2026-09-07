@@ -19,6 +19,7 @@ import {
   KeyRound
 } from "lucide-react";
 import { signInWithGoogle } from "../lib/firebase";
+import firebaseConfigData from "../../firebase-applet-config.json";
 import { Pengaturan } from "../types";
 import { PWAInstallButton } from "./PWAInstallButton";
 
@@ -41,7 +42,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
   const [copiedDomain, setCopiedDomain] = useState(false);
 
   const currentHost = typeof window !== "undefined" ? window.location.hostname : "";
-  const firebaseProjectId = "civic-experience-hwjrd";
+  const firebaseProjectId = import.meta.env.VITE_FIREBASE_PROJECT_ID || firebaseConfigData.projectId || "generate-rpp-mi-syuriyah";
   const firebaseConsoleUrl = `https://console.firebase.google.com/project/${firebaseProjectId}/authentication/settings`;
 
   const handleGoogleSignIn = async () => {

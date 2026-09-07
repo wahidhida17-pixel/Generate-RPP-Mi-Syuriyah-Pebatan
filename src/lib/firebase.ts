@@ -1,4 +1,5 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
+import { getAnalytics, isSupported, Analytics } from "firebase/analytics";
 import { 
   getAuth, 
   GoogleAuthProvider, 
@@ -34,18 +35,31 @@ import {
   Pengaturan 
 } from "../types";
 
-// Firebase Configuration dynamically resolved from Environment Variables
+// Firebase Configuration dynamically resolved from Environment Variables or Config
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_PENGATURAN_FIREBASE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY || firebaseConfigData.apiKey,
   authDomain: import.meta.env.VITE_PENGATURAN_FIREBASE_AUTH_DOMAIN || import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseConfigData.authDomain,
   projectId: import.meta.env.VITE_PENGATURAN_FIREBASE_PROJECT_ID || import.meta.env.VITE_FIREBASE_PROJECT_ID || firebaseConfigData.projectId,
   storageBucket: import.meta.env.VITE_PENGATURAN_FIREBASE_STORAGE_BUCKET || import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseConfigData.storageBucket,
   messagingSenderId: import.meta.env.VITE_PENGATURAN_FIREBASE_MESSAGING_SENDER_ID || import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseConfigData.messagingSenderId,
-  appId: import.meta.env.VITE_PENGATURAN_FIREBASE_APP_ID || import.meta.env.VITE_FIREBASE_APP_ID || firebaseConfigData.appId
+  appId: import.meta.env.VITE_PENGATURAN_FIREBASE_APP_ID || import.meta.env.VITE_FIREBASE_APP_ID || firebaseConfigData.appId,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || firebaseConfigData.measurementId || "G-5MQ8KWFCMQ"
 };
 
 // Initialize Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+
+// Optional Firebase Analytics with browser environment check
+export let analytics: Analytics | null = null;
+if (typeof window !== "undefined") {
+  isSupported().then((supported) => {
+    if (supported) {
+      analytics = getAnalytics(app);
+    }
+  }).catch(() => {
+    // Ignore analytics unsupported in some sandboxed environments
+  });
+}
 
 // Firebase Auth & Google Auth Provider
 export const auth = getAuth(app);
@@ -151,10 +165,11 @@ export function onAuthUserChanged(callback: (user: User | null) => void) {
 }
 
 // Use explicit firestoreDatabaseId with standard Firestore initialization
-const dbId = import.meta.env.VITE_FIREBASE_DATABASE_ID || firebaseConfigData.firestoreDatabaseId || "(default)";
+const configuredDbId = import.meta.env.VITE_FIREBASE_DATABASE_ID || firebaseConfigData.firestoreDatabaseId;
+const targetDbId = configuredDbId && configuredDbId !== "(default)" ? configuredDbId : undefined;
 
 // Original Owner & Master Database Identifiers
-const PRIMARY_DATABASE_ID = firebaseConfigData.firestoreDatabaseId || "ai-studio-remixaplikasigur-56062c0e-eed9-4671-9c69-29cccf21d0d1";
+const PRIMARY_DATABASE_ID = configuredDbId || "(default)";
 const PRIMARY_APPLET_ID = "56062c0e-eed9-4671-9c69-29cccf21d0d1";
 
 /**
@@ -184,16 +199,16 @@ export function checkDatabaseAuthorization(): { authorized: boolean; reason?: st
 // Silence internal Firestore logs so transient network/offline states do not trigger error overlays
 setLogLevel("silent");
 
-// Critical: Standard Firestore client bound to provisioned database ID with auto-detect long polling
+// Critical: Standard Firestore client bound to provisioned or default database ID with auto-detect long polling
 let dbInstance;
 try {
-  dbInstance = initializeFirestore(
-    app,
-    { experimentalAutoDetectLongPolling: true },
-    firebaseConfigData.firestoreDatabaseId
-  );
+  dbInstance = targetDbId
+    ? initializeFirestore(app, { experimentalAutoDetectLongPolling: true }, targetDbId)
+    : initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
 } catch {
-  dbInstance = getFirestore(app, firebaseConfigData.firestoreDatabaseId);
+  dbInstance = targetDbId
+    ? getFirestore(app, targetDbId)
+    : getFirestore(app);
 }
 export const db = dbInstance;
 export const firestore = db;
