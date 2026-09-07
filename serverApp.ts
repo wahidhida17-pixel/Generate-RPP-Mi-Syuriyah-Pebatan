@@ -1,20 +1,41 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
-import firebaseConfigData from "./firebase-applet-config.json";
 
 dotenv.config();
+
+let firebaseConfigData: Record<string, any> = {
+  projectId: "civic-experience-hwjrd",
+  apiKey: "",
+  firestoreDatabaseId: "ai-studio-remixaplikasigur-56062c0e-eed9-4671-9c69-29cccf21d0d1"
+};
+
+try {
+  const configPath = path.resolve(process.cwd(), "firebase-applet-config.json");
+  if (fs.existsSync(configPath)) {
+    const raw = fs.readFileSync(configPath, "utf-8");
+    firebaseConfigData = JSON.parse(raw);
+  }
+} catch {
+  // Ignore error if file not found
+}
 
 const app = express();
 
 app.use(express.json({ limit: "10mb" }));
 
 // Initialize Gemini AI Client lazily or safely
-  const getAiClient = () => {
-    const apiKey = process.env.GEMINI_API_KEY;
+  const getAiClient = (req?: express.Request) => {
+    const customKey = 
+      (req?.headers?.["x-gemini-api-key"] as string) || 
+      (req?.body?.geminiApiKey as string);
+    const apiKey = customKey || process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
     if (!apiKey) {
-      throw new Error("GEMINI_API_KEY environment variable is missing.");
+      throw new Error(
+        "Kunci API GEMINI_API_KEY belum disetel. Jika Anda menjalankan aplikasi di Vercel, pastikan untuk menambahkan GEMINI_API_KEY di Vercel Project Settings > Environment Variables atau masukkan di menu Pengaturan Aplikasi."
+      );
     }
     return new GoogleGenAI({ apiKey });
   };
@@ -170,7 +191,7 @@ app.use(express.json({ limit: "10mb" }));
   app.post("/api/ai/generate-modul", async (req, res) => {
     try {
       const formData = req.body;
-      const ai = getAiClient();
+      const ai = getAiClient(req);
 
       const metodeText = formData.metode && formData.metode.trim() 
         ? formData.metode.trim() 
@@ -340,7 +361,7 @@ FORMAT WAJIB LAYOUT HTML:
   app.post("/api/ai/chat-asisten", async (req, res) => {
     try {
       const { message, context } = req.body;
-      const ai = getAiClient();
+      const ai = getAiClient(req);
 
       const systemPrompt = `Anda adalah "EdAdmin AI Assistant", asisten kecerdasan buatan khusus administrasi guru dan pendidik profesional di Indonesia.
 Tugas Anda membantu guru dalam:
@@ -456,7 +477,7 @@ Informasi Sekolah/Guru Pendukung: ${JSON.stringify(context || {})}`;
     }).join("\n");
 
     try {
-      const ai = getAiClient();
+      const ai = getAiClient(req);
       const prompt = `WAJIB DIPATUHI PADA SETIAP SLIDE:
 Jangan membuat slide yang hanya berisi judul atau poin-poin singkat. Setiap slide harus memiliki materi yang lengkap, mudah dipahami, dan siap digunakan untuk mengajar tanpa perlu banyak pengeditan.
 
@@ -636,7 +657,7 @@ Format Objek JSON Per Slide:
   app.post("/api/ai/generate-perangkat-ajar", async (req, res) => {
     try {
       const { docType, formData } = req.body || {};
-      const ai = getAiClient();
+      const ai = getAiClient(req);
 
       const schoolName = formData?.school || "SMA Negeri 1 Jambi";
       const subject = formData?.subject || "Bahasa Indonesia";
@@ -871,7 +892,7 @@ KETENTUAN LAYOUT HTML:
   // API Endpoint: Generator Perangkat Ajar KBC (Kurikulum Berbasis Cinta Kemenag)
   app.post("/api/ai/generate-perangkat-ajar-kbc", async (req, res) => {
     try {
-      const ai = getAiClient();
+      const ai = getAiClient(req);
       const { docType, formData } = req.body;
       const {
         schoolName = "MAN 1 Kerinci",
@@ -1245,7 +1266,7 @@ Layout: A4 Landscape (@media print { @page { size: A4 landscape; margin: 1.0cm; 
   app.post("/api/ai/generate-kartu-soal", async (req, res) => {
     try {
       const { formData } = req.body || {};
-      const ai = getAiClient();
+      const ai = getAiClient(req);
 
       const school = formData?.school || "SMP NEGERI 3 KERINCI";
       const subject = formData?.subject || "Bahasa Indonesia";
@@ -1347,7 +1368,7 @@ Gunakan format tabel Markdown yang rapi agar mudah dibaca dan disalin ke Word/Ex
   app.post("/api/ai/generate-modul-kokurikuler", async (req, res) => {
     try {
       const { formData } = req.body || {};
-      const ai = getAiClient();
+      const ai = getAiClient(req);
 
       const school = formData?.school || "SMP NEGERI 3 KERINCI";
       const grade = formData?.grade || "Kelas VIII";
@@ -1442,7 +1463,7 @@ Sajikan seluruh hasil dalam format terstruktur rapi (heading A–H sesuai di ata
   app.post("/api/ai/generate-soal-ujian", async (req, res) => {
     try {
       const { docType = "naskah", formData } = req.body || {};
-      const ai = getAiClient();
+      const ai = getAiClient(req);
 
       const schoolName = formData?.school || "SMP NEGERI 3 KERINCI";
       const subject = formData?.subject || "Bahasa Indonesia";

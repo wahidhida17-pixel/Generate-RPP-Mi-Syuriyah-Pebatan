@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Bot, Send, User, Sparkles, Copy, Check, Loader2 } from "lucide-react";
 import { ChatMessage, Pengaturan } from "../types";
+import { postAiApi } from "../lib/aiHelper";
 
 interface AsistenGuruAIViewProps {
   config: Pengaturan;
@@ -51,19 +52,14 @@ export const AsistenGuruAIView: React.FC<AsistenGuruAIViewProps> = ({ config }) 
     setLoading(true);
 
     try {
-      const res = await fetch("/api/ai/chat-asisten", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: query.trim(),
-          context: {
-            guru: config.Nama_Guru,
-            sekolah: config.Nama_Sekolah
-          }
-        })
+      const data = await postAiApi("/api/ai/chat-asisten", {
+        message: query.trim(),
+        context: {
+          guru: config.Nama_Guru,
+          sekolah: config.Nama_Sekolah
+        }
       });
 
-      const data = await res.json();
       if (data.status === "success") {
         const assistantMsg: ChatMessage = {
           id: (Date.now() + 1).toString(),
@@ -81,7 +77,7 @@ export const AsistenGuruAIView: React.FC<AsistenGuruAIViewProps> = ({ config }) 
         {
           id: (Date.now() + 1).toString(),
           sender: "assistant",
-          text: "Maaf, terjadi kendala saat menghubungkan ke asisten AI. Silakan coba lagi.",
+          text: "Maaf, terjadi kendala saat menghubungkan ke asisten AI. Pastikan kunci Gemini API telah terpasang di menu Pengaturan atau coba lagi beberapa saat lagi.",
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
         }
       ]);

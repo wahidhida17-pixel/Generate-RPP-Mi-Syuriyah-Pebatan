@@ -48,7 +48,36 @@
   }
 }
 
-/* SweetAlert2 Theme synchronization */
+/* SweetAlert2 Theme synchronization & Modern Aesthetic */
+.swal2-popup {
+  border-radius: 1.25rem !important;
+  padding: 1.5rem !important;
+  font-family: inherit !important;
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
+}
+.swal2-title {
+  font-size: 1.2rem !important;
+  font-weight: 700 !important;
+  line-height: 1.4 !important;
+  color: #1e293b !important;
+}
+.swal2-html-container {
+  font-size: 0.875rem !important;
+  margin: 0.75rem 0 1rem 0 !important;
+  line-height: 1.6 !important;
+  color: #475569 !important;
+}
+.swal2-actions {
+  gap: 0.5rem !important;
+  margin-top: 1rem !important;
+}
+.swal2-styled {
+  border-radius: 0.75rem !important;
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  padding: 0.625rem 1.25rem !important;
+  transition: all 0.2s ease !important;
+}
 .dark .swal2-popup {
   background-color: #0f172a !important;
   color: #f8fafc !important;

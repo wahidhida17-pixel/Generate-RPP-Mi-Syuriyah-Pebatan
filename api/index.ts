@@ -1,4 +1,4 @@
-import app from "../serverApp";
+import app from "../serverApp.ts";
 
 // Middleware to normalize incoming Vercel serverless request URLs
 app.use((req, _res, next) => {

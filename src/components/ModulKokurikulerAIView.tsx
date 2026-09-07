@@ -19,7 +19,8 @@ import {
   Check
 } from "lucide-react";
 import { Pengaturan } from "../types";
-import { notifySimpanSuccess, notifySimpanError, notifyUnduhSuccess } from "../lib/swal";
+import { notifySimpanSuccess, notifySimpanError, notifyUnduhSuccess, notifyAiError } from "../lib/swal";
+import { postAiApi } from "../lib/aiHelper";
 
 interface ModulKokurikulerAIViewProps {
   config: Pengaturan;
@@ -227,13 +228,8 @@ export const ModulKokurikulerAIView: React.FC<ModulKokurikulerAIViewProps> = ({ 
 
     setIsGenerating(true);
     try {
-      const res = await fetch("/api/ai/generate-modul-kokurikuler", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ formData })
-      });
+      const data = await postAiApi("/api/ai/generate-modul-kokurikuler", { formData });
 
-      const data = await res.json();
       if (data.status === "success" && data.markdown) {
         setModulMarkdown(data.markdown);
         notifySimpanSuccess("Modul Kokurikuler AI Berhasil Disusun!");
@@ -242,7 +238,7 @@ export const ModulKokurikulerAIView: React.FC<ModulKokurikulerAIViewProps> = ({ 
       }
     } catch (err: any) {
       console.error(err);
-      notifySimpanError(err.message || "Terjadi kesalahan saat memproses Modul Kokurikuler AI.");
+      notifyAiError("Modul Kokurikuler AI (Profil Lulusan)", err);
     } finally {
       setIsGenerating(false);
     }

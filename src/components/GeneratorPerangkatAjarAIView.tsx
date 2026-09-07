@@ -16,7 +16,8 @@ import {
   UserCheck
 } from "lucide-react";
 import { Pengaturan } from "../types";
-import { notifySimpanSuccess, notifySimpanError, notifyUnduhSuccess } from "../lib/swal";
+import { notifySimpanSuccess, notifySimpanError, notifyUnduhSuccess, notifyAiError } from "../lib/swal";
+import { postAiApi } from "../lib/aiHelper";
 
 interface GeneratorPerangkatAjarAIViewProps {
   config: Pengaturan;
@@ -135,16 +136,11 @@ Peserta didik mampu menulis gagasan, pikiran, pandangan, arahan atau pesan tertu
     setGeneratingProgress(`Menyusun ${docMeta?.fullTitle || targetType}...`);
 
     try {
-      const res = await fetch("/api/ai/generate-perangkat-ajar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          docType: targetType,
-          formData
-        })
+      const data = await postAiApi("/api/ai/generate-perangkat-ajar", {
+        docType: targetType,
+        formData
       });
 
-      const data = await res.json();
       if (data.status === "success" && data.html) {
         const cleanedHtml = sanitizeHtmlForOutput(data.html);
         setGeneratedDocs((prev) => ({
@@ -157,7 +153,7 @@ Peserta didik mampu menulis gagasan, pikiran, pandangan, arahan atau pesan tertu
       }
     } catch (err: any) {
       console.error(err);
-      notifySimpanError(`Gagal membuat ${docMeta?.fullTitle}: ` + (err?.message || "Terjadi kesalahan server."));
+      notifyAiError(docMeta?.fullTitle || "Perangkat Ajar AI", err);
     } finally {
       setIsGenerating(false);
     }
@@ -166,6 +162,8 @@ Peserta didik mampu menulis gagasan, pikiran, pandangan, arahan atau pesan tertu
   const handleGenerateAllDocs = async () => {
     setIsGenerating(true);
     const types = ["analisis_cp", "tp", "atp", "prota", "prosem", "kktp"];
+    let successCount = 0;
+    let lastError: any = null;
 
     for (let i = 0; i < types.length; i++) {
       const t = types[i];
@@ -173,30 +171,31 @@ Peserta didik mampu menulis gagasan, pikiran, pandangan, arahan atau pesan tertu
       setGeneratingProgress(`[${i + 1}/${types.length}] Menyusun ${docMeta?.fullTitle}...`);
 
       try {
-        const res = await fetch("/api/ai/generate-perangkat-ajar", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            docType: t,
-            formData
-          })
+        const data = await postAiApi("/api/ai/generate-perangkat-ajar", {
+          docType: t,
+          formData
         });
 
-        const data = await res.json();
         if (data.status === "success" && data.html) {
           const cleanedHtml = sanitizeHtmlForOutput(data.html);
           setGeneratedDocs((prev) => ({
             ...prev,
             [t]: cleanedHtml
           }));
+          successCount++;
         }
       } catch (err) {
         console.error(`Gagal pada ${t}:`, err);
+        lastError = err;
       }
     }
 
     setIsGenerating(false);
-    notifySimpanSuccess("Seluruh 6 Dokumen Administrasi Perangkat Ajar AI Berhasil Dibuat!");
+    if (successCount > 0) {
+      notifySimpanSuccess(`${successCount} dari ${types.length} Dokumen Administrasi Perangkat Ajar AI Berhasil Dibuat!`);
+    } else if (lastError) {
+      notifyAiError("Seluruh Dokumen Administrasi Perangkat Ajar AI", lastError);
+    }
   };
 
   // Print A4 Function

@@ -20,7 +20,8 @@ import {
   LayoutList
 } from "lucide-react";
 import { Pengaturan } from "../types";
-import { notifySimpanSuccess, notifySimpanError, notifyUnduhSuccess } from "../lib/swal";
+import { notifySimpanSuccess, notifySimpanError, notifyUnduhSuccess, notifyAiError } from "../lib/swal";
+import { postAiApi } from "../lib/aiHelper";
 
 interface PerangkatAjarKBCViewProps {
   config: Pengaturan;
@@ -206,16 +207,11 @@ Peserta didik mampu menerapkan adab islami terhadap orang tua, guru, sesama manu
     const payloadData = isModulType ? formDataModul : formData;
 
     try {
-      const res = await fetch("/api/ai/generate-perangkat-ajar-kbc", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          docType: targetType,
-          formData: payloadData
-        })
+      const data = await postAiApi("/api/ai/generate-perangkat-ajar-kbc", {
+        docType: targetType,
+        formData: payloadData
       });
 
-      const data = await res.json();
       if (data.status === "success" && data.html) {
         const cleanedHtml = sanitizeHtmlForOutput(data.html);
         setGeneratedDocs((prev) => ({
@@ -228,7 +224,7 @@ Peserta didik mampu menerapkan adab islami terhadap orang tua, guru, sesama manu
       }
     } catch (err: any) {
       console.error(err);
-      notifySimpanError(`Gagal membuat ${docMeta?.fullTitle}: ` + (err?.message || "Terjadi kesalahan server."));
+      notifyAiError(docMeta?.fullTitle || "Tujuan Pembelajaran (TP) KBC", err);
     } finally {
       setIsGenerating(false);
     }
@@ -243,41 +239,47 @@ Peserta didik mampu menerapkan adab islami terhadap orang tua, guru, sesama manu
       { id: "rubrik", title: "Rubrik Penilaian Formatif & Sumatif KBC" }
     ];
 
+    let successCount = 0;
+    let lastError: any = null;
+
     for (let i = 0; i < modulTypes.length; i++) {
       const t = modulTypes[i];
       setGeneratingProgress(`[${i + 1}/3] Menyusun ${t.title}...`);
 
       try {
-        const res = await fetch("/api/ai/generate-perangkat-ajar-kbc", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            docType: t.id,
-            formData: formDataModul
-          })
+        const data = await postAiApi("/api/ai/generate-perangkat-ajar-kbc", {
+          docType: t.id,
+          formData: formDataModul
         });
 
-        const data = await res.json();
         if (data.status === "success" && data.html) {
           const cleanedHtml = sanitizeHtmlForOutput(data.html);
           setGeneratedDocs((prev) => ({
             ...prev,
             [t.id]: cleanedHtml
           }));
+          successCount++;
         }
       } catch (err) {
         console.error(`Gagal pada ${t.id}:`, err);
+        lastError = err;
       }
     }
 
     setIsGenerating(false);
-    setActiveDoc("modul_ajar");
-    notifySimpanSuccess("Paket 3 Dokumen (Modul Ajar, LKPD, & Rubrik KBC) Berhasil Dibuat!");
+    if (successCount > 0) {
+      setActiveDoc("modul_ajar");
+      notifySimpanSuccess(`${successCount} Dokumen (Modul Ajar, LKPD, & Rubrik KBC) Berhasil Dibuat!`);
+    } else if (lastError) {
+      notifyAiError("Paket Pembelajaran KBC (Modul, LKPD, Rubrik)", lastError);
+    }
   };
 
   const handleGenerateAllDocs = async () => {
     setIsGenerating(true);
     const types = docTypeList.map((d) => d.id);
+    let successCount = 0;
+    let lastError: any = null;
 
     for (let i = 0; i < types.length; i++) {
       const t = types[i];
@@ -288,30 +290,31 @@ Peserta didik mampu menerapkan adab islami terhadap orang tua, guru, sesama manu
       const payloadData = isModulType ? formDataModul : formData;
 
       try {
-        const res = await fetch("/api/ai/generate-perangkat-ajar-kbc", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            docType: t,
-            formData: payloadData
-          })
+        const data = await postAiApi("/api/ai/generate-perangkat-ajar-kbc", {
+          docType: t,
+          formData: payloadData
         });
 
-        const data = await res.json();
         if (data.status === "success" && data.html) {
           const cleanedHtml = sanitizeHtmlForOutput(data.html);
           setGeneratedDocs((prev) => ({
             ...prev,
             [t]: cleanedHtml
           }));
+          successCount++;
         }
       } catch (err) {
         console.error(`Gagal pada ${t}:`, err);
+        lastError = err;
       }
     }
 
     setIsGenerating(false);
-    notifySimpanSuccess("Seluruh 9 Dokumen Administrasi Perangkat Ajar KBC Berhasil Dibuat!");
+    if (successCount > 0) {
+      notifySimpanSuccess(`${successCount} dari ${types.length} Dokumen Administrasi KBC Berhasil Dibuat!`);
+    } else if (lastError) {
+      notifyAiError("Seluruh Dokumen Administrasi KBC", lastError);
+    }
   };
 
   // Print A4 Function

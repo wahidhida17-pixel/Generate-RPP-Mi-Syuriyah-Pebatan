@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Wand2, Printer, Download, Sparkles, FileText, Loader2, AlertTriangle, BookOpen } from "lucide-react";
 import { ModulFormState, Pengaturan } from "../types";
-import { notifySimpanSuccess, notifySimpanError, notifyCetakSuccess, notifyUnduhSuccess, notifyUnduhError } from "../lib/swal";
+import { notifySimpanSuccess, notifySimpanError, notifyCetakSuccess, notifyUnduhSuccess, notifyUnduhError, notifyAiError } from "../lib/swal";
+import { postAiApi } from "../lib/aiHelper";
 
 interface ModulAjarAIViewProps {
   config: Pengaturan;
@@ -69,13 +70,8 @@ export const ModulAjarAIView: React.FC<ModulAjarAIViewProps> = ({ config }) => {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/ai/generate-modul", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form)
-      });
+      const data = await postAiApi("/api/ai/generate-modul", form);
 
-      const data = await res.json();
       if (data.status === "success" && data.html) {
         const cleaned = cleanHtmlContent(data.html);
         setGeneratedHtml(cleaned);
@@ -84,7 +80,7 @@ export const ModulAjarAIView: React.FC<ModulAjarAIViewProps> = ({ config }) => {
         throw new Error(data.message || "Gagal membuat modul AI.");
       }
     } catch (err: any) {
-      notifySimpanError(err.message || "Terjadi kesalahan saat memproses generator AI.");
+      notifyAiError("Modul Ajar Deep Learning AI", err);
     } finally {
       setLoading(false);
     }

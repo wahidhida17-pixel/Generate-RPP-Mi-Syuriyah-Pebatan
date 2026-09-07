@@ -23,6 +23,7 @@ import { Pengaturan } from "../types";
 import { savePengaturan } from "../lib/firebase";
 import { notifySimpanSuccess, notifySimpanError } from "../lib/swal";
 import { PWAInstallButton } from "./PWAInstallButton";
+import { getStoredGeminiApiKey, setStoredGeminiApiKey } from "../lib/aiHelper";
 
 interface PengaturanViewProps {
   config: Pengaturan;
@@ -31,6 +32,7 @@ interface PengaturanViewProps {
 
 export const PengaturanView: React.FC<PengaturanViewProps> = ({ config, onNavigateToReset }) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [geminiKey, setGeminiKey] = useState(getStoredGeminiApiKey());
   const [form, setForm] = useState<Pengaturan>({
     Nama_Guru: "",
     NIP_Guru: "",
@@ -567,6 +569,60 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({ config, onNaviga
                   <div className="w-2 h-2 rounded-full bg-blue-500" />
                   <span>Firestore Spark Plan (Auto-Sync)</span>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Box 4.5: Kunci Gemini API (Opsional untuk Deployment Vercel) */}
+          <div className="p-5 bg-amber-50/70 dark:bg-amber-950/20 rounded-2xl border border-amber-200 dark:border-amber-800/60 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-200 dark:border-amber-800/60 pb-2">
+              <h3 className="font-bold text-xs uppercase tracking-wider text-amber-800 dark:text-amber-300 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                Kunci Google Gemini AI API (Khusus Vercel / Hosting Mandiri)
+              </h3>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-200/80 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 w-fit">
+                Opsional / Cadangan
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              Jika Anda menjalankan aplikasi ini di <strong>Vercel</strong> dan belum menambahkan environment variable <code className="font-mono text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/50 px-1 py-0.5 rounded">GEMINI_API_KEY</code> di dashboard Vercel, Anda dapat memasukkan kunci API Gemini gratis Anda langsung di sini.
+            </p>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                Google Gemini API Key:
+              </label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="password"
+                  value={geminiKey}
+                  onChange={(e) => setGeminiKey(e.target.value)}
+                  placeholder="AIzaSy..."
+                  className="flex-1 px-3 py-2 text-xs font-mono rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStoredGeminiApiKey(geminiKey);
+                    notifySimpanSuccess(geminiKey.trim() ? "Kunci Gemini API berhasil disimpan secara lokal!" : "Kunci API kustom dihapus.");
+                  }}
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm shrink-0"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  Simpan Kunci API
+                </button>
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-1">
+                <span>Belum punya kunci API? Dapatkan gratis:</span>
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-amber-700 dark:text-amber-400 font-bold hover:underline"
+                >
+                  Buat API Key Gratis di Google AI Studio &rarr;
+                </a>
               </div>
             </div>
           </div>

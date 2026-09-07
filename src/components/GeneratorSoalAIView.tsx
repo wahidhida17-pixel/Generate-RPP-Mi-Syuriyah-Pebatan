@@ -23,7 +23,8 @@ import {
   FileSpreadsheet
 } from "lucide-react";
 import { Pengaturan } from "../types";
-import { notifySimpanSuccess, notifySimpanError, notifyUnduhSuccess } from "../lib/swal";
+import { notifySimpanSuccess, notifySimpanError, notifyUnduhSuccess, notifyAiError } from "../lib/swal";
+import { postAiApi } from "../lib/aiHelper";
 
 interface GeneratorSoalAIViewProps {
   config: Pengaturan;
@@ -217,13 +218,8 @@ export const GeneratorSoalAIView: React.FC<GeneratorSoalAIViewProps> = ({ config
 
     setIsGeneratingKartu(true);
     try {
-      const res = await fetch("/api/ai/generate-kartu-soal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ formData: kartuFormData })
-      });
+      const data = await postAiApi("/api/ai/generate-kartu-soal", { formData: kartuFormData });
 
-      const data = await res.json();
       if (data.status === "success" && data.markdown) {
         setKartuSoalMarkdown(data.markdown);
         // Automatically sync to Tahap 2 sumberMateri
@@ -242,7 +238,7 @@ export const GeneratorSoalAIView: React.FC<GeneratorSoalAIViewProps> = ({ config
       }
     } catch (err: any) {
       console.error(err);
-      notifySimpanError(err.message || "Terjadi kesalahan saat memproses Kartu Soal AI.");
+      notifyAiError("Kartu Soal & Kisi-Kisi AI", err);
     } finally {
       setIsGeneratingKartu(false);
     }
@@ -389,16 +385,11 @@ export const GeneratorSoalAIView: React.FC<GeneratorSoalAIViewProps> = ({ config
     setGeneratingProgress(`Menyusun ${tabMeta?.label || targetType} berbasis format resmi...`);
 
     try {
-      const res = await fetch("/api/ai/generate-soal-ujian", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          docType: targetType,
-          formData: naskahFormData
-        })
+      const data = await postAiApi("/api/ai/generate-soal-ujian", {
+        docType: targetType,
+        formData: naskahFormData
       });
 
-      const data = await res.json();
       if (data.status === "success" && data.html) {
         const cleanedHtml = sanitizeHtmlForOutput(data.html);
         setGeneratedDocs((prev) => ({
@@ -412,7 +403,7 @@ export const GeneratorSoalAIView: React.FC<GeneratorSoalAIViewProps> = ({ config
       }
     } catch (err: any) {
       console.error(err);
-      notifySimpanError(err.message || "Gagal menghasilkan naskah ujian AI.");
+      notifyAiError(tabMeta?.label || "Naskah Ujian AI", err);
     } finally {
       setIsGeneratingNaskah(false);
       setGeneratingProgress("");
@@ -429,32 +420,17 @@ export const GeneratorSoalAIView: React.FC<GeneratorSoalAIViewProps> = ({ config
     try {
       // 1. Naskah Soal
       setGeneratingProgress("1/3 Menyusun Naskah Soal Ujian Lengkap Siap Cetak...");
-      const res1 = await fetch("/api/ai/generate-soal-ujian", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ docType: "naskah", formData: naskahFormData })
-      });
-      const data1 = await res1.json();
+      const data1 = await postAiApi("/api/ai/generate-soal-ujian", { docType: "naskah", formData: naskahFormData });
       const naskahHtml = data1.status === "success" ? sanitizeHtmlForOutput(data1.html) : "";
 
       // 2. Lembar Jawaban Siswa
       setGeneratingProgress("2/3 Menyusun Lembar Jawaban Siswa (LJS) A4...");
-      const res2 = await fetch("/api/ai/generate-soal-ujian", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ docType: "ljs", formData: naskahFormData })
-      });
-      const data2 = await res2.json();
+      const data2 = await postAiApi("/api/ai/generate-soal-ujian", { docType: "ljs", formData: naskahFormData });
       const ljsHtml = data2.status === "success" ? sanitizeHtmlForOutput(data2.html) : "";
 
       // 3. Kunci Jawaban & Pedoman Penskoran
       setGeneratingProgress("3/3 Menyusun Kunci Jawaban & Rubrik Penskoran Dokumen Guru...");
-      const res3 = await fetch("/api/ai/generate-soal-ujian", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ docType: "kunci", formData: naskahFormData })
-      });
-      const data3 = await res3.json();
+      const data3 = await postAiApi("/api/ai/generate-soal-ujian", { docType: "kunci", formData: naskahFormData });
       const kunciHtml = data3.status === "success" ? sanitizeHtmlForOutput(data3.html) : "";
 
       setGeneratedDocs({
@@ -467,7 +443,7 @@ export const GeneratorSoalAIView: React.FC<GeneratorSoalAIViewProps> = ({ config
       notifySimpanSuccess("3 Dokumen Ujian Lengkap (Naskah, LJS, dan Kunci) Berhasil Dibuat!");
     } catch (err: any) {
       console.error(err);
-      notifySimpanError(err.message || "Gagal menyusun seluruh dokumen ujian AI.");
+      notifyAiError("Paket Dokumen Ujian (Naskah, LJS, Kunci)", err);
     } finally {
       setIsGeneratingNaskah(false);
       setGeneratingProgress("");
